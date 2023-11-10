@@ -13,7 +13,8 @@
                 "-std=c11",
                 "-Wall",
                 "-Wextra",
-                "-Werror"
+                "-Werror",
+                "-D_GNU_SOURCE"
             ],
             "options": {
                 "cwd": "${fileDirname}"
