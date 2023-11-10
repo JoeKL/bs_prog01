@@ -1,7 +1,92 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
+// shell.c
+#include "shell.h"
+
+
+char *read_line()
+{
+    char buffer[100]; // Temporärer Puffer für die Eingabe
+    char *line;
+
+    if (fgets(buffer, sizeof(buffer), stdin) == NULL)
+    {
+        return NULL; // Fehlerfall oder EOF
+    }
+
+    // Entfernen des Zeilenumbruchs am Ende der Eingabe
+    buffer[strcspn(buffer, "\n")] = 0;
+
+    // Speicher für die zurückzugebende Zeile reservieren
+    line = malloc(strlen(buffer) + 1);
+    if (line == NULL)
+    {
+        return NULL; // Fehler bei der Speicherallokation
+    }
+
+    // Kopieren der Eingabe in den reservierten Speicher
+    strcpy(line, buffer);
+    return line;
+}
+
+char **split_line(char *line)
+{
+
+    int bufsize = MAX_ARGS;
+    int position = 0;
+    char **tokens = malloc(bufsize * sizeof(char *));
+    char *token;
+
+    if (!tokens)
+    {
+        fprintf(stderr, "split_line: Speicherallokationsfehler\n");
+        exit(EXIT_FAILURE);
+    }
+
+    token = strtok(line, " ");
+    while (token != NULL)
+    {
+        tokens[position] = token;
+        position++;
+
+        if (position >= bufsize)
+        {
+            bufsize += MAX_ARGS;
+            tokens = realloc(tokens, bufsize * sizeof(char *));
+            if (!tokens)
+            {
+                fprintf(stderr, "split_line: Speicherallokationsfehler\n");
+                exit(EXIT_FAILURE);
+            }
+        }
+
+        token = strtok(NULL, " ");
+    }
+    tokens[position] = NULL;
+    return tokens;
+}
+
+int execute_args(char **args)
+{
+    if (args[0] == NULL)
+    {
+        // wenn keine argumente dann beende
+        return (-1);
+    }
+    
+    int i;
+
+    // Beispiel, um die geteilten Argumente auszudrucken
+    for (i = 0; args[i] != NULL; i++)
+    {
+        if(i == 0){
+            printf("Befehl: %s\n", args[i]);
+        } else {
+            printf("Argument %d: %s\n", i, args[i]);    
+        }
+    }
+
+    return i;
+}
+
 
 char *getUsername()
 {
@@ -80,48 +165,27 @@ char *buildPrompt()
     return prompt;
 }
 
-int main()
+void shell()
 {
+    int status = -1;
+    char *prompt;
+    char *line;
+    char **args;
 
-    while (1)
+    while (status == -1)
     {
-        char *prompt = buildPrompt();
+        
+        prompt = buildPrompt();
+        printf("%s", prompt);
 
-        if (prompt != NULL)
-        {
-            printf("%s", prompt);
-            free(prompt); // Speicher freigeben, nachdem wir fertig sind
-        }
+        line = read_line();
+        args = split_line(line);
+        status = execute_args(args);
 
-        char input[256];
-
-        if (fgets(input, sizeof(input), stdin) == NULL)
-        {
-            printf("Fehler bei der Eingabe.\n");
-        }
-        else
-        {
-            int numArgs;
-            char command[128];
-            char argument[128];
-
-            numArgs = sscanf(input, "%s -%s", command, argument);
-
-            if (numArgs == 1)
-            {
-                printf("Befehl: %s\n", command);
-            }
-            else if (numArgs == 2)
-            {
-                printf("Befehl: %s\n", command);
-                printf("Argument: -%s\n", argument);
-            }
-            else
-            {
-                printf("Fehler bei der Eingabe: Befehl -Argument");
-            }
-        }
+        
+        free(prompt);
+        free(line);
+        free(args);
     }
 
-    return 0;
 }
