@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "*.rmd": "markdown",
-        "unistd.h": "c"
+        "unistd.h": "c",
+        "shell.h": "c"
     }
 }
