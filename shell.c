@@ -4,7 +4,7 @@
 
 char *read_line()
 {
-    char buffer[100]; // Temporärer Puffer für die Eingabe
+    char buffer[INPUT_BUFFER_MAX]; // Temporärer Puffer für die Eingabe
     char *line;
 
     if (fgets(buffer, sizeof(buffer), stdin) == NULL)
@@ -108,7 +108,7 @@ char *getUsername()
 
 char *getCurrentWorkingDirectory()
 {
-    static char cwd[1024];
+    static char cwd[PATH_MAX];
     if (getcwd(cwd, sizeof(cwd)) == NULL)
     {
         printf("Fehler beim Abrufen des Arbeitsverzeichnisses");
@@ -119,7 +119,7 @@ char *getCurrentWorkingDirectory()
 
 char *getSystemHostname()
 {
-    static char hostname[256];
+    static char hostname[HOST_NAME_MAX];
     if (gethostname(hostname, sizeof(hostname)) == -1)
     {
         printf("Fehler beim Abrufen des Hostnames");
@@ -167,12 +167,12 @@ char *buildPrompt()
 
 void shell()
 {
-    int status = -1;
+    // int status = 0;
     char *prompt;
     char *line;
     char **args;
 
-    while (status == -1)
+    while (1) // dauerschleife, staus wird nicht gehandled
     {
         
         prompt = buildPrompt();
@@ -180,7 +180,8 @@ void shell()
 
         line = read_line();
         args = split_line(line);
-        status = execute_args(args);
+        // status = execute_args(args);
+        execute_args(args);
 
         
         free(prompt);
