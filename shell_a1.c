@@ -27,7 +27,7 @@ char *read_line()
     return line;
 }
 
-char **split_line(char *line)
+char **split_command(char *line)
 {
 
     int bufsize = MAX_ARGS;
@@ -37,7 +37,7 @@ char **split_line(char *line)
 
     if (!tokens)
     {
-        fprintf(stderr, "split_line: Speicherallokationsfehler\n");
+        fprintf(stderr, "split_command: Speicherallokationsfehler\n");
         exit(EXIT_FAILURE);
     }
 
@@ -53,7 +53,7 @@ char **split_line(char *line)
             tokens = realloc(tokens, bufsize * sizeof(char *));
             if (!tokens)
             {
-                fprintf(stderr, "split_line: Speicherallokationsfehler\n");
+                fprintf(stderr, "split_command: Speicherallokationsfehler\n");
                 exit(EXIT_FAILURE);
             }
         }
@@ -179,7 +179,7 @@ int main()
         printf("%s", prompt);
 
         line = read_line();
-        args = split_line(line);
+        args = split_command(line);
         // status = execute_args(args);
         execute_args(args);
 
