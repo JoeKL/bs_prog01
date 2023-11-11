@@ -1,7 +1,6 @@
 // shell.c
 #include "shell.h"
 
-
 char *read_line()
 {
     char buffer[INPUT_BUFFER_MAX]; // Temporärer Puffer für die Eingabe
@@ -68,25 +67,57 @@ int execute_args(char **args)
 {
     if (args[0] == NULL)
     {
-        // wenn keine argumente dann beende
-        return (-1);
+        // Wenn keine Argumente, dann beende
+        return -1;
     }
-    
-    int i;
 
-    // Beispiel, um die geteilten Argumente auszudrucken
-    for (i = 0; args[i] != NULL; i++)
+    // Zählen, wie viele Argumente übergeben wurden
+    int i = 0;
+    while (args[i] != NULL) i++;
+
+    // Erstellen eines neuen Arrays für execvp
+    char *execvp_args[i + 1]; // +1 für den NULL-Pointer am Ende
+
+    // Argumente kopieren
+    for (int j = 0; j < i; j++)
     {
-        if(i == 0){
-            printf("Befehl: %s\n", args[i]);
-        } else {
-            printf("Argument %d: %s\n", i, args[i]);    
+        execvp_args[j] = args[j];
+    }
+
+    // NULL-Pointer als letztes Element hinzufügen
+    execvp_args[i] = NULL;
+
+    pid_t pid;
+    int status;
+
+    pid = fork();
+
+    if (pid == 0)
+    {
+        // Kindprozess erstellen
+        if (execvp(args[0], execvp_args) == -1)
+        {
+            perror("error in new_process: child process");
+            return -1;
         }
     }
-
-    return i;
+    else if(pid < 0)
+    {
+        // Fehler beim forken
+        perror("error in new_process: forking");
+        return -1;
+    }
+    else
+    {
+        // Hier Elternprozess behandeln
+        do
+        {
+            // auf die Beendigung des Kindprozesses warten
+            waitpid(pid, &status, WUNTRACED); //waitpid sammelt den Status des beendeten Kindprozesses ein
+        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+    }
+    return 1;
 }
-
 
 char *getUsername()
 {
@@ -174,7 +205,7 @@ void shell()
 
     while (1) // dauerschleife, staus wird nicht gehandled
     {
-        
+
         prompt = buildPrompt();
         printf("%s", prompt);
 
@@ -183,10 +214,8 @@ void shell()
         // status = execute_args(args);
         execute_args(args);
 
-        
         free(prompt);
         free(line);
         free(args);
     }
-
 }
