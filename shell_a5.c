@@ -1,5 +1,15 @@
-// shell.c
-#include "shell.h"
+#define MAX_ARGS 64 // Maximale Anzahl der Argumente^
+#define MAX_COMMANDS 64 // Maximale Anzahl der Argumente^
+#define INPUT_BUFFER_MAX 512
+
+/*---LIBRARIES---*/
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <limits.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 char *read_line()
 {
@@ -73,14 +83,16 @@ int execute_args(char **args)
 
     // Zählen, wie viele Argumente übergeben wurden
     int i = 0;
-    while (args[i] != NULL) i++;
+    while (args[i] != NULL)
+        i++;
 
     // Erstellen eines neuen Arrays für execvp
     char *execvp_args[i + 1]; // +1 für den NULL-Pointer am Ende
 
     // Argumente kopieren
     for (int j = 0; j < i; j++)
-    {
+    {   
+        
         execvp_args[j] = args[j];
     }
 
@@ -101,7 +113,7 @@ int execute_args(char **args)
             return -1;
         }
     }
-    else if(pid < 0)
+    else if (pid < 0)
     {
         // Fehler beim forken
         perror("error in new_process: forking");
@@ -113,10 +125,10 @@ int execute_args(char **args)
         do
         {
             // auf die Beendigung des Kindprozesses warten
-            waitpid(pid, &status, WUNTRACED); //waitpid sammelt den Status des beendeten Kindprozesses ein
+            waitpid(pid, &status, WUNTRACED); // waitpid sammelt den Status des beendeten Kindprozesses ein
         } while (!WIFEXITED(status) && !WIFSIGNALED(status));
     }
-    return 1;
+    return status;
 }
 
 char *getUsername()
@@ -196,27 +208,80 @@ char *buildPrompt()
     return prompt;
 }
 
+char **split_line(char *line)
+{
+    int bufsize = MAX_COMMANDS;
+    int position = 0;
+    char **tokens = malloc(bufsize * sizeof(char *));
+    char *token, *rest = line;
+
+    if (!tokens)
+    {
+        fprintf(stderr, "split_line: Speicherallokationsfehler\n");
+        exit(EXIT_FAILURE);
+    }
+
+    while ((token = strtok_r(rest, "&&", &rest)))
+    {
+        // Entfernen führender und nachfolgender Leerzeichen
+        while (*token == ' ')
+            token++;
+        char *end = token + strlen(token) - 1;
+        while (end > token && *end == ' ')
+            end--;
+        *(end + 1) = '\0';
+
+        tokens[position++] = token;
+
+        if (position >= bufsize)
+        {
+            bufsize += MAX_ARGS;
+            tokens = realloc(tokens, bufsize * sizeof(char *));
+            if (!tokens)
+            {
+                fprintf(stderr, "split_line: Speicherallokationsfehler\n");
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
+
+    tokens[position] = NULL;
+    return tokens;
+}
+
 int main()
 {
-    // int status = 0;
     char *prompt;
     char *line;
-    char **args;
+    char **commands;
 
-    while (1) // dauerschleife, staus wird nicht gehandled
+    while (1)
     {
 
         prompt = buildPrompt();
         printf("%s", prompt);
 
         line = read_line();
-        args = split_command(line);
-        // status = execute_args(args);
-        execute_args(args);
+        commands = split_line(line);
+
+        int i;
+        for (i = 0; commands[i] != NULL; i++)
+        {
+            char **args;
+
+            args = split_command(commands[i]);
+
+            if(execute_args(args) != 0) {
+                free(args);
+                break; // stoppe ausführung wenn der return von exec_args != 0 ist.
+            }
+            
+            free(args);
+        }
 
         free(prompt);
         free(line);
-        free(args);
+        free(commands);
     }
 
     return 0;
