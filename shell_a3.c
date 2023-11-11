@@ -196,7 +196,7 @@ char *buildPrompt()
     return prompt;
 }
 
-void shell()
+int main()
 {
     // int status = 0;
     char *prompt;
@@ -218,4 +218,6 @@ void shell()
         free(line);
         free(args);
     }
+
+    return 0;
 }

@@ -165,7 +165,7 @@ char *buildPrompt()
     return prompt;
 }
 
-void shell()
+int main()
 {
     // int status = 0;
     char *prompt;
@@ -174,7 +174,7 @@ void shell()
 
     while (1) // dauerschleife, staus wird nicht gehandled
     {
-        
+
         prompt = buildPrompt();
         printf("%s", prompt);
 
@@ -183,10 +183,10 @@ void shell()
         // status = execute_args(args);
         execute_args(args);
 
-        
         free(prompt);
         free(line);
         free(args);
     }
 
+    return 0;
 }
